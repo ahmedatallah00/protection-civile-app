@@ -1,0 +1,62 @@
+﻿# ==============================================================================
+# Protection Civile Monorepo - Git Ignore Configuration
+# ==============================================================================
+
+# Node / Backend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment secrets
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Backend runtime uploads (exclude test images/recordings but keep directory)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+mobile_app/build/
+mobile_app/.dart_tool/
+mobile_app/.flutter-plugins-dependencies
+coverage/
+
+# Android build outputs and local configuration
+android/.gradle/
+android/captures/
+android/local.properties
+mobile_app/android/.gradle/
+mobile_app/android/local.properties
+mobile_app/android/app/debug/
+mobile_app/android/app/profile/
+mobile_app/android/app/release/
+*.class
+
+# IDE & Editors
+.idea/
+mobile_app/.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.bak
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.log

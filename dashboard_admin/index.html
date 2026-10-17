@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protection Civile Tunisie - Administration Console</title>
+    
+    <!-- Google Fonts: Outfit -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap">
+    
+    <!-- FontAwesome 6 icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Leaflet JS Map Library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Application Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Authentication Overlay -->
+    <div id="auth-overlay">
+        <div class="login-card">
+            <div class="login-logo">
+                <img src="logoONPC.webp" alt="Logo ONPC" style="height: 110px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));">
+            </div>
+            <h2>ADMINISTRATION</h2>
+            <p>PROTECTION CIVILE TUNISIENNE</p>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-identifier">Identifiant (CIN, Tél ou Email)</label>
+                    <div class="input-container">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="login-identifier" required placeholder="Ex: AA123456 ou +21699000001">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Mot de passe</label>
+                    <div class="input-container">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="login-password" required placeholder="••••••••">
+                    </div>
+                </div>
+                <div id="login-error" style="color: #ef4444; font-size: 13px; font-weight: 600; margin-bottom: 20px; display: none; text-align: left;">
+                    Identifiants invalides. Veuillez réessayer.
+                </div>
+                <button type="submit" class="btn-primary" id="login-submit-btn">
+                    Se connecter <i class="fa-solid fa-right-to-bracket" style="margin-left: 8px;"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Navigation Sidebar -->
+    <aside>
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="logoONPC.webp" alt="Logo ONPC" style="height: 38px; width: auto; object-fit: contain;">
+            </div>
+            <div class="sidebar-title">
+                <h1>ONPC TUNISIE</h1>
+                <span>ADMIN CONSOLE</span>
+            </div>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="sidebar-item active" data-tab="overview">
+                <a>
+                    <i class="fa-solid fa-chart-line"></i>
+                    Tableau de bord
+                </a>
+            </li>
+            <li class="sidebar-item" data-tab="map">
+                <a>
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    Carte en Direct
+                </a>
+            </li>
+            <li class="sidebar-item" data-tab="incidents">
+                <a>
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Incidents Signalés
+                </a>
+            </li>
+            <li class="sidebar-item" data-tab="alerts">
+                <a>
+                    <i class="fa-solid fa-bullhorn"></i>
+                    Alertes et Conseils
+                </a>
+            </li>
+            <li class="sidebar-item" data-tab="users">
+                <a>
+                    <i class="fa-solid fa-users"></i>
+                    Citoyens Enregistrés
+                </a>
+            </li>
+            <li class="sidebar-item" data-tab="notifications">
+                <a>
+                    <i class="fa-solid fa-bell"></i>
+                    Notifications Admin
+                </a>
+            </li>
+            <li class="sidebar-item" data-tab="lives">
+                <a>
+                    <i class="fa-solid fa-video"></i>
+                    Vidéos en Direct
+                    <span id="live-count-badge" style="background-color: #ef4444; color: white; padding: 2px 7px; border-radius: 12px; font-size: 11px; margin-left: 6px; font-weight: 800; display: none;">0</span>
+                </a>
+            </li>
+            <li class="sidebar-item" data-tab="safety-tips">
+                <a>
+                    <i class="fa-solid fa-lightbulb"></i>
+                    Modifier Conseils
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <div class="user-profile-badge">
+                <div class="user-avatar" id="admin-avatar">A</div>
+                <div class="user-info">
+                    <span class="user-name" id="admin-name">Chargement...</span>
+                    <span class="user-role">Administrateur</span>
+                </div>
+            </div>
+            <button class="btn-logout" id="logout-btn">
+                <i class="fa-solid fa-power-off"></i>
+                Se déconnecter
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Container -->
+    <main class="dashboard-container">
+        
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-title">
+                <h2 id="view-title">Tableau de bord</h2>
+            </div>
+            <div class="header-actions" style="display: flex; align-items: center; gap: 16px;">
+                <!-- Theme Toggle Switch -->
+                <div class="theme-switch-wrapper">
+                    <span style="font-size: 13px; color: var(--text-muted);"><i class="fa-solid fa-moon"></i></span>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="theme-toggle-checkbox">
+                        <span class="theme-slider"></span>
+                    </label>
+                    <span style="font-size: 13px; color: var(--text-muted);"><i class="fa-solid fa-sun"></i></span>
+                </div>
+                
+                <div class="server-status">
+                    <div class="status-dot offline" id="server-status-dot"></div>
+                    <span id="server-status-text">Déconnecté</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- View 1: Overview -->
+        <div class="view-content active" id="overview-view">
+            <!-- Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon incidents">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-val" id="metric-total-incidents">0</span>
+                        <span class="metric-label">Total Incidents</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon pending">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-val" id="metric-pending-incidents">0</span>
+                        <span class="metric-label">En Attente</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon resolved">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-val" id="metric-resolved-incidents">0</span>
+                        <span class="metric-label">Résolus</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon alerts">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-val" id="metric-active-alerts">0</span>
+                        <span class="metric-label">Alertes Actives</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Répartition par Type de Sinistre</h3>
+                    <div class="chart-container">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>État des Signalements</h3>
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Map: Carte de Surveillance en Direct -->
+        <div class="view-content" id="map-view">
+            <div class="panel-card" style="display: flex; flex-direction: column; margin-bottom: 0;">
+                <div class="panel-header" style="flex-shrink: 0; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--card-border);">
+                    <div>
+                        <h3 style="margin-bottom: 4px;">Carte de Surveillance en Direct</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+                            Visualisation géographique en temps réel des incidents en attente et des positions des citoyens.
+                        </p>
+                    </div>
+                    <!-- Map Legend -->
+                    <div style="display: flex; gap: 16px; align-items: center; font-size: 12px; font-weight: 700; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background-color: #ef4444; display: inline-block;"></span>
+                            <span>Incidents en attente</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background-color: #3b82f6; display: inline-block;"></span>
+                            <span>Bénévoles (متطوعين) en ligne</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background-color: #10b981; display: inline-block;"></span>
+                            <span>Citoyens non-bénévoles en ligne</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background-color: #f59e0b; display: inline-block;"></span>
+                            <span>Actifs récemment (&lt; 1h)</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Map Container element -->
+                <div id="surveillance-map" style="height: 650px; width: 100%; border-radius: 12px; border: 1px solid var(--card-border); z-index: 1;"></div>
+            </div>
+        </div>
+
+        <!-- View 2: Incidents -->
+        <div class="view-content" id="incidents-view">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3>Liste des Incidents Signalés</h3>
+                    <div class="form-grid" style="margin-bottom: 0; width: 100%; max-width: 500px; display: flex; gap: 12px; justify-content: flex-end;">
+                        <select class="form-control form-control-noicon" id="filter-governorate" style="width: 180px;">
+                            <option value="">Tous les gouvernorats</option>
+                            <!-- Will be populated dynamically -->
+                        </select>
+                        <select class="form-control form-control-noicon" id="filter-status" style="width: 150px;">
+                            <option value="">Tous les états</option>
+                            <option value="pending">En attente</option>
+                            <option value="dispatched">Équipe envoyée</option>
+                            <option value="resolved">Résolu</option>
+                            <option value="closed">Clôturé</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="incidents-table">
+                        <thead>
+                            <tr>
+                                <th>Date/Heure</th>
+                                <th>Type</th>
+                                <th>Citoyen (Reporter)</th>
+                                <th>Localisation / Adresse</th>
+                                <th>Détails / Info</th>
+                                <th>Médias</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incidents-table-body">
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                                    <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Chargement des incidents...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 3: Alerts -->
+        <div class="view-content" id="alerts-view">
+            <div class="charts-grid" style="grid-template-columns: 1fr 1.2fr; align-items: start;">
+                
+                <!-- Broadcast Alert Form -->
+                <div class="panel-card" style="margin-bottom: 0;">
+                    <div class="panel-header">
+                        <h3>Diffuser une alerte d'urgence</h3>
+                    </div>
+                    <form id="broadcast-alert-form">
+                        <div class="form-group">
+                            <label for="alert-title">Titre de l'Alerte</label>
+                            <input type="text" id="alert-title" class="form-control form-control-noicon" placeholder="Ex: Risque Inondation - Tunis" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="alert-message">Description / Instructions de sécurité</label>
+                            <textarea id="alert-message" class="form-control" placeholder="Entrez le message détaillé et les conseils de sécurité..." required></textarea>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="alert-severity">Gravité</label>
+                                <select id="alert-severity" class="form-control" required>
+                                    <option value="low">Faible</option>
+                                    <option value="medium">Moyenne</option>
+                                    <option value="high" selected>Élevée</option>
+                                    <option value="critical">Critique / Vitale</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="alert-category">Catégorie</label>
+                                <select id="alert-category" class="form-control" required>
+                                    <option value="weather" selected>Météo / Climat</option>
+                                    <option value="fire">Incendie</option>
+                                    <option value="flood">Inondation</option>
+                                    <option value="accident">Accident</option>
+                                    <option value="health">Santé Publique</option>
+                                    <option value="security">Sécurité / Risques</option>
+                                    <option value="general">Général / Autre</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="alert-governorate">Zone cible</label>
+                                <select id="alert-governorate" class="form-control" required>
+                                    <option value="all" selected>Toute la Tunisie</option>
+                                    <!-- Will be populated dynamically -->
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="alert-expiry">Date d'expiration</label>
+                                <input type="datetime-local" id="alert-expiry" class="form-control form-control-noicon" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary" style="margin-top: 10px;" id="btn-broadcast-submit">
+                            <i class="fa-solid fa-paper-plane" style="margin-right: 8px;"></i> Diffuser l'alerte
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Active Alerts Feed -->
+                <div class="panel-card" style="margin-bottom: 0;">
+                    <div class="panel-header">
+                        <h3>Alertes Actives en Cours</h3>
+                    </div>
+                    <div id="alerts-feed-container" style="display: flex; flex-direction: column; gap: 16px; max-height: 580px; overflow-y: auto; padding-right: 8px;">
+                        <!-- Alerts list populated dynamically -->
+                        <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                            <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Chargement des alertes actives...
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- View 4: Users -->
+        <div class="view-content" id="users-view">
+            <div class="panel-card">
+                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                    <h3>Liste des Citoyens Enregistrés</h3>
+                    <div class="input-container" style="max-width: 320px; width: 100%; margin: 0; position: relative;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"></i>
+                        <input type="text" id="user-search-input" class="form-control" placeholder="Rechercher par Nom, Tél ou CIN..." style="padding: 10px 16px 10px 44px; border-radius: 8px;">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="incidents-table">
+                        <thead>
+                            <tr>
+                                <th>Nom Complet</th>
+                                <th>CIN</th>
+                                <th>Âge</th>
+                                <th>Téléphone</th>
+                                <th>Gouvernorat / Délégation</th>
+                                <th>Groupe Sanguin</th>
+                                <th>Infos Médicales</th>
+                                <th>Contact d'Urgence</th>
+                                <th>Bénévole</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr>
+                                <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                                    <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Chargement des utilisateurs...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 5: Notifications Admin -->
+        <div class="view-content" id="notifications-view">
+            <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px;">
+                <!-- Left: Notification Form -->
+                <div class="panel-card" style="margin-bottom: 0;">
+                    <div class="panel-header">
+                        <h3>Envoyer une Notification</h3>
+                    </div>
+                    <form id="admin-notification-form" style="display: flex; flex-direction: column; gap: 16px;">
+                        <div class="form-group">
+                            <label for="notif-title">Titre de la notification</label>
+                            <input type="text" id="notif-title" class="form-control form-control-noicon" placeholder="Ex: Info: Fermeture" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="notif-body">Paragraphe / Contenu</label>
+                            <textarea id="notif-body" class="form-control form-control-noicon" rows="4" style="height: auto; font-family: inherit;" placeholder="Saisissez le message de votre notification..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="notif-target-type">Cible de la notification</label>
+                            <select id="notif-target-type" class="form-control form-control-noicon">
+                                <option value="all">Tous les utilisateurs</option>
+                                <option value="region">Utilisateurs par région (gouvernorat)</option>
+                                <option value="user">Utilisateur spécifique (par téléphone)</option>
+                                <option value="volunteers">Tous les bénévoles</option>
+                                <option value="non_volunteers">Tous les non bénévoles</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Region target (governorate) group (hidden by default) -->
+                        <div class="form-group" id="notif-governorate-group" style="display: none;">
+                            <label for="notif-governorate">Sélectionner le Gouvernorat</label>
+                            <select id="notif-governorate" class="form-control form-control-noicon">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        
+                        <!-- User phone target group (hidden by default) -->
+                        <div class="form-group" id="notif-phone-group" style="display: none;">
+                            <label for="notif-phone">Numéro de téléphone du citoyen</label>
+                            <input type="text" id="notif-phone" class="form-control form-control-noicon" placeholder="Ex: +21699000001">
+                        </div>
+                        
+                        <button type="submit" class="btn-primary" id="notif-submit-btn">
+                            <i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Envoyer la notification
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Right: Notification History Feed -->
+                <div class="panel-card" style="margin-bottom: 0;">
+                    <div class="panel-header">
+                        <h3>Historique des Notifications Envoyées</h3>
+                    </div>
+                    <div id="notifications-history-container" style="display: flex; flex-direction: column; gap: 16px; max-height: 520px; overflow-y: auto; padding-right: 8px;">
+                        <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                            <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Chargement de l'historique...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 6: Vidéos en Direct -->
+        <div class="view-content" id="lives-view">
+            <div class="panel-card" style="margin-bottom: 0;">
+                <div class="panel-header">
+                    <div>
+                        <h3 style="margin-bottom: 4px;">Flux Vidéo en Direct</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+                            Surveillance en temps réel des flux de caméras citoyennes actives.
+                        </p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-dot online" style="background-color: #ef4444; animation: pulse 1.5s infinite;"></span>
+                        <span style="font-size: 13px; font-weight: 700; color: #ef4444; text-transform: uppercase;">Flux Actifs</span>
+                    </div>
+                </div>
+                
+                <!-- Live Video grid -->
+                <div id="lives-grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+                    <!-- Active live camera cards will be appended here dynamically -->
+                    <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 60px 0;">
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 12px;"></i>
+                        <div>Chargement des flux vidéo en direct...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recorded Lives Panel -->
+            <div class="panel-card" style="margin-top: 24px; margin-bottom: 0;">
+                <div class="panel-header">
+                    <div>
+                        <h3 style="margin-bottom: 4px;">Historique des Vidéos Enregistrées</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+                            Consulter et lire les anciens flux vidéo enregistrés.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="table-container" style="margin-top: 16px; overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Citoyen</th>
+                                <th>Date d'enregistrement</th>
+                                <th>Durée</th>
+                                <th>Trames</th>
+                                <th>Localisation</th>
+                                <th style="width: 200px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recorded-lives-table-body">
+                            <!-- Dynamically loaded recorded lives -->
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 20px; margin-bottom: 8px;"></i>
+                                    <div>Chargement des enregistrements...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 7: Modifier Conseils -->
+        <div class="view-content" id="safety-tips-view">
+            <div class="panel-card" style="margin-bottom: 0;">
+                <div class="panel-header">
+                    <div>
+                        <h3 style="margin-bottom: 4px;">Conseils de Sécurité de l'App</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+                            Ajouter, modifier ou supprimer les conseils affichés aux citoyens dans l'application mobile.
+                        </p>
+                    </div>
+                    <div>
+                        <button class="btn-primary" onclick="openAddSafetyTipModal()" style="padding: 8px 16px; border-radius: 8px; width: auto;">
+                            <i class="fa-solid fa-plus" style="margin-right: 6px;"></i> Ajouter un Conseil
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container" style="margin-top: 16px; overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Icône</th>
+                                <th>Titre (FR)</th>
+                                <th>Titre (AR)</th>
+                                <th>Catégorie</th>
+                                <th style="width: 200px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="safety-tips-table-body">
+                            <!-- Dynamically loaded safety tips rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+
+    <!-- Modal 1: Assign Unit -->
+    <div class="modal-overlay" id="unit-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Assigner une Unité de Secours</h3>
+                <button class="modal-close-btn" onclick="closeModal('unit-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal-incident-id">
+                <div class="form-group">
+                    <label for="modal-assigned-unit">Nom/Code de l'équipe</label>
+                    <input type="text" id="modal-assigned-unit" class="form-control form-control-noicon" placeholder="Ex: Brigade Tunis - Véhicule 12, Ambulance 4" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('unit-modal')">Annuler</button>
+                <button class="btn-primary" style="width: auto; padding: 10px 24px;" id="modal-unit-submit-btn">Assigner & Envoyer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Media Viewer Lightbox -->
+    <div class="modal-overlay" id="media-modal">
+        <div class="modal-card media-viewer-card">
+            <div class="modal-header">
+                <h3>Preuve Média</h3>
+                <button class="modal-close-btn" onclick="closeModal('media-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="media-modal-container" style="width: 100%; text-align: center;">
+                    <!-- img or video element will be appended here dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('media-modal')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2b: Incident Details Modal -->
+    <div class="modal-overlay" id="incident-details-modal">
+        <div class="modal-card" style="max-width: 800px; width: 95%;">
+            <div class="modal-header">
+                <h3>Détails du Signalement d'Incident</h3>
+                <button class="modal-close-btn" onclick="closeModal('incident-details-modal')">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-right: 8px;">
+                
+                <!-- General Info Card -->
+                <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+                    <div>
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; text-transform: uppercase;">Type d'incident</span>
+                        <strong id="detail-inc-type" style="font-size: 16px; color: #ef4444;">-</strong>
+                    </div>
+                    <div>
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; text-transform: uppercase;">Gouvernorat / Adresse</span>
+                        <strong id="detail-inc-location" style="font-size: 14px;">-</strong>
+                    </div>
+                    <div>
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; text-transform: uppercase;">Date du signalement</span>
+                        <strong id="detail-inc-date" style="font-size: 14px;">-</strong>
+                    </div>
+                    <div>
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; text-transform: uppercase;">Statut / Unité</span>
+                        <strong id="detail-inc-status" style="font-size: 14px;">-</strong>
+                    </div>
+                </div>
+
+                <!-- Combined Media Gallery Section -->
+                <div>
+                    <h4 style="margin: 0 0 10px 0; font-weight: 800; font-size: 14px; border-bottom: 2px solid var(--card-border); padding-bottom: 6px;">
+                        <i class="fa-solid fa-images"></i> Photos et Preuves Visuelles
+                    </h4>
+                    <div id="detail-inc-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 8px;">
+                        <!-- Photos appended here -->
+                    </div>
+                    <div id="detail-inc-no-gallery" style="color: var(--text-muted); text-align: center; padding: 20px 0; display: none;">
+                        Aucune photo ou vidéo jointe à ce signalement.
+                    </div>
+                </div>
+
+                <!-- Declarants and Reports List (Unified Group) -->
+                <div>
+                    <h4 style="margin: 0 0 10px 0; font-weight: 800; font-size: 14px; border-bottom: 2px solid var(--card-border); padding-bottom: 6px;">
+                        <i class="fa-solid fa-users"></i> Citoyens Déclarants (<span id="detail-inc-declarants-count">1</span>)
+                    </h4>
+                    <div id="detail-inc-declarants-list" style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- Declarant details card will be appended dynamically here -->
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="detail-inc-group-info" style="font-size: 11px; color: var(--text-muted);"></span>
+                <button class="btn-secondary" onclick="closeModal('incident-details-modal')" style="width: auto; padding: 8px 20px;">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Citizen Management Modal -->
+    <div class="modal-overlay" id="citizen-modal">
+        <div class="modal-card" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Gestion du Profil Citoyen</h3>
+                <button class="modal-close-btn" onclick="closeCitizenModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 480px; overflow-y: auto;">
+                <input type="hidden" id="modal-citizen-id">
+                
+                <!-- View Mode details -->
+                <div id="citizen-view-mode">
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Nom Complet</span>
+                            <span id="view-citizen-name" style="font-weight: 700;"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">CIN</span>
+                            <span id="view-citizen-cin" class="badge" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--card-border); padding: 2px 6px;"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Âge</span>
+                            <span id="view-citizen-age" style="font-weight: 600;"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Téléphone</span>
+                            <span id="view-citizen-phone"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Email</span>
+                            <span id="view-citizen-email"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Région</span>
+                            <span id="view-citizen-region"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Groupe Sanguin</span>
+                            <span id="view-citizen-blood"></span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; border-bottom: 1px solid var(--card-border); padding-bottom: 8px; gap: 4px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Infos Médicales</span>
+                            <span id="view-citizen-medical" style="font-weight: 600;"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Contact d'Urgence</span>
+                            <span id="view-citizen-emergency"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Bénévole (متطوع)</span>
+                            <span id="view-citizen-volunteer" style="font-weight: 700;"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span class="detail-label" style="color: var(--text-muted); font-size: 13px;">Date d'Inscription</span>
+                            <span id="view-citizen-date"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Mode Form -->
+                <div id="citizen-edit-mode" style="display: none;">
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div class="form-group">
+                            <label for="edit-citizen-name">Nom Complet</label>
+                            <input type="text" id="edit-citizen-name" class="form-control form-control-noicon" required>
+                        </div>
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div class="form-group">
+                                <label for="edit-citizen-age">Âge</label>
+                                <input type="number" id="edit-citizen-age" class="form-control form-control-noicon" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-citizen-blood">Groupe Sanguin</label>
+                                <select id="edit-citizen-blood" class="form-control form-control-noicon">
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div class="form-group">
+                                <label for="edit-citizen-phone">Téléphone</label>
+                                <input type="text" id="edit-citizen-phone" class="form-control form-control-noicon" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-citizen-email">Email</label>
+                                <input type="email" id="edit-citizen-email" class="form-control form-control-noicon">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-citizen-address">Adresse Approximative</label>
+                            <input type="text" id="edit-citizen-address" class="form-control form-control-noicon">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-citizen-medical">Informations Médicales (Allergies, Traitements...)</label>
+                            <textarea id="edit-citizen-medical" class="form-control form-control-noicon" rows="2" style="height: auto; font-family: inherit; font-size: 14px; padding: 10px;"></textarea>
+                        </div>
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div class="form-group">
+                                <label for="edit-citizen-emergency-name">Contact d'Urgence (Nom)</label>
+                                <input type="text" id="edit-citizen-emergency-name" class="form-control form-control-noicon" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-citizen-emergency-phone">Contact d'Urgence (Tél)</label>
+                                <input type="text" id="edit-citizen-emergency-phone" class="form-control form-control-noicon" required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                            <input type="checkbox" id="edit-citizen-volunteer" style="width: 18px; height: 18px; cursor: pointer;">
+                            <label for="edit-citizen-volunteer" style="margin-bottom: 0; cursor: pointer; font-weight: bold; font-size: 14px;">Bénévole (متطوع)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <div>
+                    <button class="btn-action danger" id="modal-citizen-delete-btn" style="padding: 10px 16px; border-radius: 8px;">
+                        <i class="fa-solid fa-trash-can"></i> Désactiver
+                    </button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <!-- Buttons when in View Mode -->
+                    <button class="btn-secondary" id="modal-citizen-close-btn" onclick="closeCitizenModal()">Fermer</button>
+                    <button class="btn-primary" id="modal-citizen-edit-btn" style="width: auto; padding: 10px 20px;">Modifier</button>
+                    
+                    <!-- Buttons when in Edit Mode -->
+                    <button class="btn-secondary" id="modal-citizen-cancel-btn" style="display: none;">Annuler</button>
+                    <button class="btn-primary" id="modal-citizen-save-btn" style="display: none; width: auto; padding: 10px 20px; background: #10b981;">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Notification Management Modal -->
+    <div class="modal-overlay" id="notification-modal">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Gestion de la Notification</h3>
+                <button class="modal-close-btn" onclick="closeNotificationModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal-notif-id">
+                
+                <!-- View Mode -->
+                <div id="notif-view-mode">
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span style="color: var(--text-muted); font-size: 13px;">Titre</span>
+                            <span id="view-notif-title" style="font-weight: 700;"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span style="color: var(--text-muted); font-size: 13px;">Cible</span>
+                            <span id="view-notif-target" class="badge" style="padding: 2px 8px;"></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+                            <span style="color: var(--text-muted); font-size: 13px;">Date d'envoi</span>
+                            <span id="view-notif-date"></span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; border-bottom: 1px solid var(--card-border); padding-bottom: 8px; gap: 6px;">
+                            <span style="color: var(--text-muted); font-size: 13px;">Message / Paragraphe</span>
+                            <span id="view-notif-body" style="font-size: 14px; line-height: 1.5; color: var(--text-main); white-space: pre-wrap;"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Edit Mode Form -->
+                <div id="notif-edit-mode" style="display: none;">
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div class="form-group">
+                            <label for="edit-notif-title">Titre de la notification</label>
+                            <input type="text" id="edit-notif-title" class="form-control form-control-noicon" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-notif-body">Message / Paragraphe</label>
+                            <textarea id="edit-notif-body" class="form-control form-control-noicon" rows="4" style="height: auto; font-family: inherit;" required></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <div>
+                    <button class="btn-action danger" id="modal-notif-delete-btn" style="padding: 10px 16px; border-radius: 8px;">
+                        <i class="fa-solid fa-trash-can"></i> Supprimer
+                    </button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <!-- Buttons in View Mode -->
+                    <button class="btn-secondary" id="modal-notif-close-btn" onclick="closeNotificationModal()">Fermer</button>
+                    <button class="btn-primary" id="modal-notif-edit-btn" style="width: auto; padding: 10px 20px;">Modifier</button>
+                    
+                    <!-- Buttons in Edit Mode -->
+                    <button class="btn-secondary" id="modal-notif-cancel-btn" style="display: none;">Annuler</button>
+                    <button class="btn-primary" id="modal-notif-save-btn" style="display: none; width: auto; padding: 10px 20px; background: #10b981;">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 7: Safety Tip Management Modal -->
+    <div class="modal-overlay" id="safety-tip-modal">
+        <div class="modal-card" style="max-width: 750px; width: 90%;">
+            <div class="modal-header">
+                <h3 id="safety-tip-modal-title">Ajouter un Conseil de Sécurité</h3>
+                <button class="modal-close-btn" onclick="closeModal('safety-tip-modal')">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+                <form id="safety-tip-form" style="display: flex; flex-direction: column; gap: 20px;">
+                    <input type="hidden" id="safety-tip-id">
+                    
+                    <!-- Top section: Icon & Category -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label for="safety-tip-icon">Icône du Conseil</label>
+                            <select id="safety-tip-icon" class="form-control form-control-noicon" required>
+                                <option value="local_fire_department">🔥 Incendie (local_fire_department)</option>
+                                <option value="water_damage">🌊 Inondation (water_damage)</option>
+                                <option value="thermostat">🌡️ Température / Canicule (thermostat)</option>
+                                <option value="medical_services">🏥 Médical / Secours (medical_services)</option>
+                                <option value="warning">⚠️ Danger / Attention (warning)</option>
+                                <option value="help_outline">❓ Autre (help_outline)</option>
+                            </select>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="form-group">
+                                <label for="safety-tip-category-fr">Catégorie (FR)</label>
+                                <input type="text" id="safety-tip-category-fr" class="form-control form-control-noicon" placeholder="Ex: Incendie" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="safety-tip-category-ar">Catégorie (AR)</label>
+                                <input type="text" id="safety-tip-category-ar" class="form-control form-control-noicon" placeholder="Ex: حرائق" required style="text-align: right; direction: rtl;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Title (FR / AR) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label for="safety-tip-title-fr">Titre (FR)</label>
+                            <input type="text" id="safety-tip-title-fr" class="form-control form-control-noicon" placeholder="Ex: Incendie Domestique" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="safety-tip-title-ar">Titre (AR)</label>
+                            <input type="text" id="safety-tip-title-ar" class="form-control form-control-noicon" placeholder="Ex: الحريق المنزلي" required style="text-align: right; direction: rtl;">
+                        </div>
+                    </div>
+
+                    <!-- Description (FR / AR) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label for="safety-tip-desc-fr">Description (FR)</label>
+                            <textarea id="safety-tip-desc-fr" class="form-control form-control-noicon" rows="2" style="height: auto;" placeholder="Que faire en cas de..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="safety-tip-desc-ar">Description (AR)</label>
+                            <textarea id="safety-tip-desc-ar" class="form-control form-control-noicon" rows="2" style="height: auto; text-align: right; direction: rtl;" placeholder="ماذا تفعل في حالة..." required></textarea>
+                        </div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid var(--card-border); margin: 0;">
+
+                    <!-- Dos Section (À Faire) -->
+                    <div>
+                        <h4 style="margin: 0 0 10px 0; color: #10b981; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i class="fa-regular fa-circle-check"></i> À FAIRE (Dos)</span>
+                            <button type="button" class="btn-primary" onclick="addDoField()" style="padding: 4px 10px; font-size: 11px; width: auto; background: #10b981; border: 0;">
+                                <i class="fa-solid fa-plus"></i> Ajouter ligne
+                            </button>
+                        </h4>
+                        <div id="safety-tip-dos-container" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Dynamic fields added here -->
+                        </div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid var(--card-border); margin: 0;">
+
+                    <!-- Donts Section (À Éviter / Interdit) -->
+                    <div>
+                        <h4 style="margin: 0 0 10px 0; color: #ef4444; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i class="fa-regular fa-circle-xmark"></i> À ÉVITER / INTERDIT (Donts)</span>
+                            <button type="button" class="btn-primary" onclick="addDontField()" style="padding: 4px 10px; font-size: 11px; width: auto; background: #ef4444; border: 0;">
+                                <i class="fa-solid fa-plus"></i> Ajouter ligne
+                            </button>
+                        </h4>
+                        <div id="safety-tip-donts-container" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Dynamic fields added here -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('safety-tip-modal')">Annuler</button>
+                <button type="button" class="btn-primary" id="safety-tip-save-btn" onclick="saveSafetyTip()" style="width: auto; padding: 10px 24px;">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 8: Live Recording Player Modal -->
+    <div class="modal-overlay" id="video-player-modal">
+        <div class="modal-card" style="max-width: 600px; width: 90%;">
+            <div class="modal-header">
+                <h3 id="player-modal-title">Lecture de l'enregistrement</h3>
+                <button class="modal-close-btn" onclick="closeVideoPlayerModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                <div style="width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid var(--card-border);">
+                    <img id="player-frame" src="" style="width: 100%; height: 100%; object-fit: contain; display: none;" />
+                    <div id="player-placeholder" style="color: var(--text-muted); text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center;">
+                        <i class="fa-solid fa-video-slash" style="font-size: 32px;"></i>
+                        <span>Prêt pour la lecture</span>
+                    </div>
+                </div>
+                
+                <!-- Player Controls -->
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Timeline Progress -->
+                    <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                        <span id="player-current-time" style="font-family: monospace; font-size: 12px; color: var(--text-muted);">0:00</span>
+                        <input type="range" id="player-progress" min="0" max="100" value="0" style="flex-grow: 1; cursor: pointer; height: 6px; border-radius: 3px;" oninput="onPlayerProgressSeek(this.value)">
+                        <span id="player-total-time" style="font-family: monospace; font-size: 12px; color: var(--text-muted);">0:00</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 8px;">
+                        <button class="btn-action" onclick="playerStepBack()" style="padding: 10px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                            <i class="fa-solid fa-backward-step"></i>
+                        </button>
+                        <button class="btn-primary" id="player-play-btn" onclick="togglePlayerPlay()" style="padding: 10px; border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: #3b82f6; border: 0; outline: none; box-shadow: none;">
+                            <i class="fa-solid fa-play" style="font-size: 16px;"></i>
+                        </button>
+                        <button class="btn-action" onclick="playerStepForward()" style="padding: 10px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main);">
+                            <i class="fa-solid fa-forward-step"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button class="btn-secondary" onclick="closeVideoPlayerModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.io Client -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <!-- JS Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
